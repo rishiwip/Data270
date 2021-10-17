@@ -20,7 +20,7 @@ sql         = ''
 
 def oracleConnection():
     try:
-        conn = cx_Oracle.connect('SYSTEM/Welcome123')
+        conn = cx_Oracle.connect('****/****')
         #cur = conn.cursor()
         #print("Connection established")
         return conn
@@ -35,6 +35,9 @@ def getIncrDateParam():
     global productId
     global grain
     try:
+        #sql = "SELECT NVL(max(TIMESTAMP_KEY),TO_DATE(\'2015-08-01 00:00:00\',\'YYYY-MM-DD HH24:MI:SS\')) AS START_DATE,CURRENT_TIMESTAMP AS END_DATE FROM HR.COINBASE_BTC_HIST WHERE PRODUCT = \'BTC-USD\' AND GRAIN_MINUTE = 1;"
+        #sql  = "SELECT NVL(max(TIMESTAMP_KEY),TO_DATE('2015-08-01 00:00:00','YYYY-MM-DD HH24:MI:SS')) AS START_DATE,\
+        #    CURRENT_TIMESTAMP AS END_DATE FROM HR.COINBASE_BTC_HIST WHERE PRODUCT = 'BTC-USD' AND GRAIN_MINUTE = 1"
         sql  = "SELECT NVL(max(TIMESTAMP_KEY),TO_DATE('2015-08-01 00:00:00','YYYY-MM-DD HH24:MI:SS')) AS START_DATE,\
             CURRENT_TIMESTAMP AS END_DATE FROM {tableName} WHERE PRODUCT = '{productID}' AND GRAIN_MINUTE = {grain}"
         sql = sql.format(tableName=table,productID=productId,grain=grain)
@@ -161,8 +164,14 @@ def loadData(param):
         if len(data) > 0:            
             data.columns= ["Date","Open","High","Low","Close","Volume"]
             data['Date'] = pd.to_datetime(data['Date'], unit='s')
+            #data.assign(Product=productId)
+            #data.assign(Grain=grain)
             data['Product'] = productId
             data['Grain'] = grain
+            #data.set_index('Date', inplace=True)
+            #data.reset_index(inplace=True)
+            #data.sort_values(by='Date', ascending=True, inplace=True)
+            #data.reset_index(inplace=True)
             dataList = data.values.tolist()
             conn = oracleConnection()
             c = conn.cursor()
@@ -236,7 +245,11 @@ def main():
         #processCryptoData('HR.COINBASE_BTC_HIST','BTC-USD',1)                 #processCryptoData(table,product_id,grain=1)
         #processCryptoData('HR.COINBASE_BTC_HIST','BTC-USD',5)                  #processCryptoData(table,product_id,grain=1)
         #processCryptoData('HR.COINBASE_BTC_HIST','BTC-USD',15)
-        processCryptoData('HR.COINBASE_BTC_HIST','BTC-USD',60)         
+        #processCryptoData('HR.COINBASE_BTC_HIST','BTC-USD',60)
+        processCryptoData('HR.COINBASE_ETH_HIST','ETH-USD',1)                 #processCryptoData(table,product_id,grain=1)
+        processCryptoData('HR.COINBASE_ETH_HIST','ETH-USD',5)                  #processCryptoData(table,product_id,grain=1)
+        processCryptoData('HR.COINBASE_ETH_HIST','ETH-USD',15)
+        processCryptoData('HR.COINBASE_ETH_HIST','ETH-USD',60)           
     except Exception as e:
         print("Exception occurred",str(e))
     
