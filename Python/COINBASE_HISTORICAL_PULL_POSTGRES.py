@@ -24,7 +24,7 @@ thread      = 1
 
 def oracleConnection():
     try:
-        conn = cx_Oracle.connect('***/***')
+        conn = cx_Oracle.connect('****/****')
         return conn
     except Exception as e:
         print("Exception occurrred")
@@ -34,8 +34,8 @@ def postgresConnection():
     try:
         connection = pg.connect(
             host="localhost",
-            user='postgres',
-            password="Welcome123",
+            user='****',
+            password="****",
         )
         print('postgresConnection established...')
         return connection
@@ -55,11 +55,10 @@ def getIncrDateParam():
         sql = "with temp as ( select MAX(TIMESTAMP_KEY) as TIMESTAMP_KEY \
         from {tableName} where PRODUCT = '{productID}'	and GRAIN_MINUTE = {grain}) \
         select case	when T.TIMESTAMP_KEY is null \
-        then to_timestamp('2015-08-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS') \
+        then to_timestamp('2016-08-17 00:00:00', 'YYYY-MM-DD HH24:MI:SS') \
         else T.TIMESTAMP_KEY end as START_DATE,\
         current_timestamp as END_DATE \
         from temp T"
-        #sql = 'select current_timestamp'
         sql = sql.format(tableName=table,productID=productId,grain=grain)
         #print(sql)
         conn = postgresConnection()
@@ -71,7 +70,7 @@ def getIncrDateParam():
             #print(row)
             param['Start_Date']  = row[0]
             param['End_Date']   = row[1]
-        print(param)
+        #print(param)
         return param
     except Exception as e:
         print("Exception occurred ")
@@ -157,8 +156,9 @@ def parallelProcessing(functionName,listData):
     global thread
     pool = ThreadPool(thread)
     try:
-        print('Processing source data in multithread')
+        #print('Processing source data in multithread',str(listData))
         result = pool.map(functionName,listData)
+        return result
     except Exception as e:
         print("Exception occurred in parallelProcess")
         print(str(e))
@@ -189,9 +189,20 @@ def processCryptoData(tableName,product_id,grain_=1):
     except Exception as e:
         print("Exception occurred in processCryptoData")
         print(str(e))
+    finally:
+        table       = ''
+        productId   = ''
+        grain       = ''
+        sql         = ''
+        dataList    = []
+        excepList   = []
 
 
 def loadDataDB(inputList):
+    #global dataList
+    #global excepList
+    global table
+    global grain
     try:
         conn = postgresConnection()
         c = conn.cursor()
@@ -203,6 +214,7 @@ def loadDataDB(inputList):
             if ct % 10000 == 0:
                 conn.commit()
                 print("Records processed into database:",str(ct))
+        print('Table processed = %s Grain = %s Records Processed = %s' % (table,grain,ct))
     except Exception as e:
         print("Exception occurred in processCryptoData")
         print(str(e))        
@@ -226,7 +238,9 @@ def processData(param):
     retry = 0
     try:
         cb   = cbpro.PublicClient()
-        #print('sourceList len is',len(sourceList))        
+        #print('Param',str(param))
+        if len(dataList) > 1 and len(dataList) % 300==0:
+            print('API Records processed:',len(dataList))
         while status != 'Ok':
             sourceList = cb.get_product_historic_rates(product_id=productId,start=param[0], end=param[1], granularity=60*grain)
             #print('sourceList len is',len(sourceList))
@@ -243,11 +257,12 @@ def processData(param):
                 status = 'Ok'
             else:
                 retry+=1
-                if retry <= 5:
-                    time.sleep(5)
-                    print('API did not return record, trying again in 5 seconds')
-                else:
-                    status = 'Ok'
+                #if retry <= 5:
+                #    time.sleep(5)
+                #    print('API did not return record, trying again in 5 seconds, attempt:',retry,param)
+                #else:
+                #    status = 'Ok'
+            status = 'Ok'
         return True
     except Exception as e:
         print("Exception occurred in processData..")
@@ -262,18 +277,17 @@ def main():
     global thread
     thread  = 2
     try:
+        crypto = ['BTC','ETH','LTC']
+        minGrain = [60,15,5,1]
         #grain =  [60, 300, 900, 3600, 21600, 86400]
-        #processCryptoData(table,product_id,grain=1)  
-        processCryptoData('cryptodb.COINBASE_BTC_HIST','BTC-USD',1)        
-        processCryptoData('cryptodb.COINBASE_BTC_HIST','BTC-USD',5) 
-        processCryptoData('cryptodb.COINBASE_BTC_HIST','BTC-USD',15)
-        processCryptoData('cryptodb.COINBASE_BTC_HIST','BTC-USD',60)
-        print("Table Loaded COINBASE_BTC_HIST")                     
-        processCryptoData('cryptodb.COINBASE_ETH_HIST','ETH-USD',1) 
-        processCryptoData('cryptodb.COINBASE_ETH_HIST','ETH-USD',5) 
-        processCryptoData('cryptodb.COINBASE_ETH_HIST','ETH-USD',15)
-        processCryptoData('cryptodb.COINBASE_ETH_HIST','ETH-USD',60)
-        print("Table Loaded COINBASE_ETH_HIST")           
+        for coin in crypto:
+            label = coin + '-USD'
+            tbl   = 'cryptodb.coinbase_'+coin+'_hist'
+            for grn in minGrain:
+                processCryptoData(tbl,label,grn)
+        #print("Table STARTED COINBASE_BTC_HIST")
+        #processCryptoData('cryptodb.COINBASE_BTC_HIST','BTC-USD',1)           #processCryptoData(table,product_id,grain=1)               
+          
     except Exception as e:
         print("Exception occurred",str(e))
     
