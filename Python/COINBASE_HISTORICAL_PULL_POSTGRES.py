@@ -296,4 +296,71 @@ if __name__ == '__main__':
         True
     else:
         False
+    yu
     
+accuracy = ((y_hat > 0.5) == BLabel).float().mean().item() 
+model.backward(BSample, BLabel, y_hat)
+
+--------------------------------------
+
+model = TwoLayerNN()
+
+num_epochs = 50
+
+cost = torch.nn.BCELoss()
+BSize = 20
+
+for epoch in range(num_epochs):
+    for i in range(int(samples.shape[0]/BSize)):
+        BSample,BLabel=batcher(samples,labels,i,BSize)
+        y_hat = model(BSample)
+
+        epoch_cost = cost(y_hat,BLabel)
+        accuracy = ((y_hat > 0.5) == BLabel).float().mean().item() 
+        model.backward(BSample, BLabel, y_hat)
+    if epoch % 5 == 0:
+        print('Epoch {} | Loss: {} | accuracy: {}'.format(epoch, epoch_cost, accuracy*100))
+
+
+model = TwoLayerNN()
+
+num_epochs = 50
+
+cost = torch.nn.BCELoss()
+BSize = 20
+
+for epoch in range(num_epochs):
+    for i in range(int(samples.shape[0]/BSize)):
+        BSample,BLabel=batcher(samples,labels,i,BSize)
+        y_hat = model(BSample)
+
+        epoch_cost = cost(y_hat,BLabel)
+        accuracy = ((y_hat > 0.5) == BLabel).float().mean().item() 
+        model.backward(BSample, BLabel, y_hat)
+    if epoch % 5 == 0:
+        print('Epoch {} | Loss: {} | accuracy: {}'.format(epoch, epoch_cost, accuracy*100))
+
+
+model = TwoLayerNN()
+
+num_epochs = 50
+
+cost = torch.nn.BCELoss()
+BSize = 20
+
+for epoch in range(num_epochs):
+    for i in range(int(samples.shape[0]/BSize)):
+        BSample,BLabel=batcher(samples,labels,i,BSize)
+        y_hat = model(BSample)
+
+        epoch_cost = cost(y_hat,BLabel)
+        accuracy = ((y_hat > 0.5) == BLabel).float().mean().item() 
+        model.backward(BSample, BLabel, y_hat)
+    if epoch % 5 == 0:
+        print('Epoch {} | Loss: {} | accuracy: {}'.format(epoch, epoch_cost, accuracy*100))
+        
+        
+def batcher(samples,labels,i,BSize):
+    BLabel= labels[i*BSize:(i+1)*BSize]
+    BSample= samples[i*BSize:(i+1)*BSize]
+    return BSample,BLabel
